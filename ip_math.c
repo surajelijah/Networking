@@ -2,6 +2,14 @@
 #include<string.h>
 #include<stdlib.h>
 
+#define MAX_IP_LEN 16
+
+struct IP_ADDR{
+	const char* ip_addr;
+	short int mask;
+
+};
+
 void get_broadcast_address(char*ip_addr,char mask,char* output_buffer){
 
 /*
@@ -73,11 +81,41 @@ int check_ip_subnet_membership(char* network_id,char mask,char* check_ip){
 	return 0;
 }
 
-
-
-int main()
-{
+void seperate_ip_and_mask(char* ip_addr,int len,struct IP_ADDR* ip){
 	
+/*
+	Input :192.168.63.5(IP Address) and (18) length of IP Adress with mask value 
+	Output:Fills the values of the IP_ADDR Struct
+*/	
+	short int mask=0;
+
+	//case : 192.168.63.5/2
+	if((*(ip_addr+(len-2)))=='/'){
+		mask=*(ip_addr+(len-2))-48;
+		*(ip_addr+(len-2))='\0';
+	}
+	//case : 192.16.63.5/24
+	else{
+		mask=(*(ip_addr+(len-2))-48)*10 + (*(ip_addr+(len-1))-48);
+		*(ip_addr+(len-3))='\0';
+	}
+	
+	//Filling the values into the struct
+	ip->ip_addr=ip_addr;
+	ip->mask=mask;
+}
+
+int main(int argc,char *argv[])
+{
+	short int len=strlen(argv[1]);
+	struct IP_ADDR ip_addr_struct;
+	if(len>18)
+		printf("Invalid IPV4 Address ,Enter the format in the following x.y.z.a/mask\n");
+	else
+	{
+		seperate_ip_and_mask(argv[1],len,&ip_addr_struct);
+		printf("\nIP_ADDR is : %s\nMask Value : %d\n\n",ip_addr_struct.ip_addr,ip_addr_struct.mask);
+	}
 	return 0;
 }
 
