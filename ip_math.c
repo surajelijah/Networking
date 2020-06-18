@@ -5,10 +5,43 @@
 #define MAX_IP_LEN 16
 
 struct IP_ADDR{
+	
 	const char* ip_addr;
+	int * seperated_units;
 	short int mask;
 
 };
+
+
+int split_char_array(char* ip_addr,int* seperated_units){
+
+/*
+	Input : 192.168.63.2(ip_addr)
+	Output: [192,168,63,2,24](seperated_units) and the (5) lenght of the units
+*/
+	
+	int len=0,value=0;
+	
+	while((*ip_addr)!='\0'){
+		        	
+		if((*ip_addr)>47 && (*ip_addr)<58){
+			value=(value*10) + ((*ip_addr)-48);
+		}
+		else if((*ip_addr)=='.' || (*ip_addr)=='/'){
+			seperated_units[len++]=value;
+			value=0;
+		}
+		else
+			return -1;
+
+		ip_addr++;	
+	}
+	if((*ip_addr)=='\0')
+		seperated_units[len++]=value; //Addding the mask value
+
+	return len;	
+}
+
 
 void get_broadcast_address(char*ip_addr,char mask,char* output_buffer){
 
@@ -17,7 +50,8 @@ void get_broadcast_address(char*ip_addr,char mask,char* output_buffer){
 	Output: 192.168.63.255(Broadcast Address)
 
 	Given the IP Address and Mask value Output the Broadcast Address.
-*/
+*/	
+	
 
 }
 
@@ -52,7 +86,7 @@ void get_network_id(char* ip_address,char mask,char* output_buffer){
 
 	Given the IP Address Output the Network Address. 
 */
-
+	
 }
 
 
@@ -64,8 +98,12 @@ unsigned int get_subnet_cardinality(char mask){
 
 	Given the mask value return the cardinality that is the maximum number
 	of assignable IP Addresses.
-*/
-	return 0;
+*/	
+	unsigned int m=1;
+	
+	m=(m<<(32-(int)mask));
+	
+	return m-2;
 }
 
 int check_ip_subnet_membership(char* network_id,char mask,char* check_ip){
@@ -81,40 +119,43 @@ int check_ip_subnet_membership(char* network_id,char mask,char* check_ip){
 	return 0;
 }
 
-void seperate_ip_and_mask(char* ip_addr,int len,struct IP_ADDR* ip){
-	
-/*
-	Input :192.168.63.5(IP Address) and (18) length of IP Adress with mask value 
-	Output:Fills the values of the IP_ADDR Struct
-*/	
-	short int mask=0;
+int fill_ip_addr_struct_details(struct IP_ADDR* ip_addr_struct,char* ip_addr)
+{
 
-	//case : 192.168.63.5/2
-	if((*(ip_addr+(len-2)))=='/'){
-		mask=*(ip_addr+(len-2))-48;
-		*(ip_addr+(len-2))='\0';
-	}
-	//case : 192.16.63.5/24
-	else{
-		mask=(*(ip_addr+(len-2))-48)*10 + (*(ip_addr+(len-1))-48);
-		*(ip_addr+(len-3))='\0';
-	}
+/*
+	Input : IP Adddress and Stucture pointer
+	Output : Length of the seperated units of IP Address 	
+*/
+	short int len=0;
+
+	ip_addr_struct->seperated_units=(int*)malloc(5*sizeof(int));
+
+	len = split_char_array(ip_addr,ip_addr_struct->seperated_units);
 	
-	//Filling the values into the struct
-	ip->ip_addr=ip_addr;
-	ip->mask=mask;
+	ip_addr_struct->ip_addr = ip_addr;
+	
+	ip_addr_struct->mask = (*(ip_addr_struct->seperated_units+(len-1)));
+
+	return len;	
 }
+
+
 
 int main(int argc,char *argv[])
 {
-	short int len=strlen(argv[1]);
-	struct IP_ADDR ip_addr_struct;
-	if(len>18)
+	short int len=0;
+					
+        struct IP_ADDR *ip_addr=(struct IP_ADDR*)malloc(sizeof(struct IP_ADDR));
+	
+	len = fill_ip_addr_struct_details(ip_addr,argv[1]);
+
+	if(len>5 || len==-1)
 		printf("Invalid IPV4 Address ,Enter the format in the following x.y.z.a/mask\n");
 	else
 	{
-		seperate_ip_and_mask(argv[1],len,&ip_addr_struct);
-		printf("\nIP_ADDR is : %s\nMask Value : %d\n\n",ip_addr_struct.ip_addr,ip_addr_struct.mask);
+		printf("\nIP_ADDR is : %s\nMask Value : %d\n",ip_addr->ip_addr,ip_addr->mask);
+		printf("Subnet Cardinality : %u\n",get_subnet_cardinality(ip_addr->mask));
+		
 	}
 	return 0;
 }
